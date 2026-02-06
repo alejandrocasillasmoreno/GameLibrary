@@ -11,5 +11,17 @@ personal de videojuegos de forma centralizada.
 ## Intrucciones de instalación y ejecución
 
 ## Estructura del proyecto
-
+GameLibrary/
+├── node_modules/       # Dependencias
+├── src/
+│   ├── components/     # Piezas de la UI
+│   │   ├── Login.jsx       # Autenticación
+│   │   ├── Catalog.jsx     # Buscador API Externa
+│   │   └── Library.jsx     # CRUD Personal
+│   ├── App.jsx         # Orquestador de rutas
+│   ├── App.css         # Estilos globales (Tema Oscuro)
+│   └── main.jsx        # Punto de entrada React
+├── app.js              # Servidor Express y Configuración DB
+├── package.json        # Gestor de dependencias
+└── README.md           # Documentación
 ## Usuario de prueba
