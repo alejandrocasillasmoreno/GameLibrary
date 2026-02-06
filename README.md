@@ -9,6 +9,77 @@ personal de videojuegos de forma centralizada.
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
 ## Intrucciones de instalación y ejecución
+### 📋 1. Prerrequisitos
+Asegúrate de tener instalado:
+* **Node.js** (v16 o superior)
+* **MySQL** (Puede ser a través de **XAMPP** o instalación nativa)
+* **Git**
+
+---
+
+### 🗄️ 2. Configuración de la Base de Datos
+1.  Inicia tu servidor MySQL (si usas XAMPP, arranca el módulo **MySQL**).
+2.  Abre tu herramienta de gestión (phpMyAdmin o MySQL Workbench).
+3.  Crea una base de datos vacía llamada: `gamelibrary`.
+4.  Importa el archivo `database.sql` ubicado en la raíz del proyecto para generar las tablas y datos iniciales.
+
+---
+
+### 🔙 3. Configuración del Backend (Servidor)
+
+1.  Abre una terminal y entra en la carpeta del servidor:
+    ```bash
+    cd backend
+    ```
+
+2.  Instala las dependencias:
+    ```bash
+    npm install
+    ```
+
+3.  **Variables de Entorno:** Crea un archivo llamado `.env` en la carpeta `backend/` y añade la configuración de tu base de datos:
+    ```text
+    DB_HOST=localhost
+    DB_USER=root
+    DB_PASSWORD=
+    DB_NAME=gamelibrary
+    PORT=3000
+    ```
+    *(Nota: Si tu base de datos tiene contraseña, cámbiala donde dice `DB_PASSWORD`)*.
+
+4.  Inicia el servidor:
+    ```bash
+    node app.js
+    ```
+    ✅ *Verás un mensaje indicando que el servidor corre en el puerto 3000.*
+
+---
+
+### 🖥️ 4. Configuración del Frontend (Cliente)
+
+1.  Abre una **nueva terminal** (no cierres la del backend) y entra en la carpeta del cliente:
+    ```bash
+    cd frontend
+    ```
+
+2.  Instala las dependencias:
+    ```bash
+    npm install
+    ```
+
+3.  Inicia la aplicación React:
+    ```bash
+    npm run dev
+    ```
+
+4.  Abre tu navegador en la URL que aparece (normalmente `http://localhost:5173`).
+
+---
+
+### 🧪 5. Verificación
+* **Login:** Intenta acceder con el usuario de prueba.
+* **Catálogo:** Verifica que cargan los juegos desde la API externa.
+* **Base de Datos:** Al añadir un juego, revisa en phpMyAdmin que se ha creado el registro en la tabla `games`.
 
 ## Estructura del proyecto
 ### 📂 Estructura del Proyecto
