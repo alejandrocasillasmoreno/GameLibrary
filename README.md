@@ -122,4 +122,11 @@ GameLibrary/
 └── docker-compose.yml          # (Opcional) Orquestación de contenedores
 ```
 
-## Prueba de usuario
+## 👤 Usuarios de Prueba
+
+Para facilitar la evaluación, se han habilitado las siguientes cuentas pre-creadas en la base de datos:
+
+| Tipo de Perfil | Email | Contraseña | Descripción |
+| :--- | :--- | :--- | :--- |
+| **Usuario con Datos** | `admin@test.com` | `12345` | Cuenta que ya tiene juegos en su biblioteca (Pendientes, Terminados, etc.) para visualizar el listado. |
+| **Usuario Nuevo** | `nuevo@test.com` | `12345` | Cuenta vacía para probar el flujo de "Bienvenida" y añadir el primer juego. |
