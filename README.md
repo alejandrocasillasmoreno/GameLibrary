@@ -49,4 +49,3 @@ GameLibrary/
 ├── database.sql                # Script de creación de tablas [Requisito 1]
 ├── README.md                   # Documentación del proyecto [Requisito 8]
 └── docker-compose.yml          # (Opcional) Orquestación de contenedores
-## Usuario de prueba
