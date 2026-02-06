@@ -11,56 +11,42 @@ personal de videojuegos de forma centralizada.
 ## Intrucciones de instalación y ejecución
 
 ## Estructura del proyecto
+### 📂 Estructura del Proyecto
+
+```text
 GameLibrary/
-├── README.md                <-- OBLIGATORIO: Debe incluir los puntos del apartado 8 [cite: 129]
-├── .gitignore               <-- Para ignorar node_modules y .env
-├── docker-compose.yml       <-- (Opcional) Si decides usar Docker para subir nota [cite: 161]
-│
-├── backend/                 <-- Cumple requisito de separación [cite: 124]
+├── backend/                    # Servidor API (Node.js + Express)
 │   ├── src/
-│   │   ├── config/          <-- Conexión a BD y variables de entorno 
+│   │   ├── config/             # Variables de entorno y conexión BD [Requisito 4.2]
 │   │   │   └── db.js
-│   │   ├── controllers/     <-- Lógica de las peticiones (Requisito 4.2) [cite: 75]
+│   │   ├── controllers/        # Lógica de negocio y funciones [Requisito 4.2]
 │   │   │   ├── authController.js
-│   │   │   ├── gameController.js
-│   │   │   └── userLibraryController.js
-│   │   ├── middleware/      <-- Para autenticación y gestión de errores [cite: 88, 113]
-│   │   │   ├── authMiddleware.js
-│   │   │   └── errorMiddleware.js
-│   │   ├── models/          <-- Acceso a datos (MySQL/Mongo) [cite: 78]
+│   │   │   └── gameController.js
+│   │   ├── models/             # Acceso a datos y consultas SQL [Requisito 4.2]
 │   │   │   ├── User.js
-│   │   │   ├── Game.js
-│   │   │   └── UserLibrary.js
-│   │   ├── routes/          <-- Definición de endpoints (Requisito 4.2) [cite: 73]
+│   │   │   └── Game.js
+│   │   ├── routes/             # Definición de rutas de la API [Requisito 4.2]
 │   │   │   ├── authRoutes.js
-│   │   │   └── libraryRoutes.js
-│   │   └── app.js           <-- Configuración de Express [cite: 71]
-│   ├── .env                 <-- Variables de entorno (OBLIGATORIO) 
-│   ├── package.json
-│   └── Dockerfile           <-- (Opcional) [cite: 161]
+│   │   │   └── gameRoutes.js
+│   │   └── app.js              # Configuración de Express
+│   ├── .env                    # Variables sensibles (No subir a GitHub)
+│   └── package.json
 │
-└── frontend/                <-- Cumple requisito de separación [cite: 123]
-    ├── public/
-    ├── src/
-    │   ├── api/             <-- Configuración de Axios/Fetch 
-    │   │   └── axiosConfig.js
-    │   ├── components/      <-- Componentes reutilizables
-    │   │   ├── Navbar.jsx
-    │   │   ├── GameCard.jsx
-    │   │   └── ProtectedRoute.jsx
-    │   ├── context/         <-- Gestión de estado (Context API) 
-    │   │   └── AuthContext.jsx
-    │   ├── pages/           <-- Vistas para React Router 
-    │   │   ├── Login.jsx
-    │   │   ├── Register.jsx
-    │   │   ├── Catalog.jsx
-    │   │   └── MyLibrary.jsx
-    │   ├── hooks/           <-- Lógica personalizada (recomendado)
-    │   ├── App.jsx
-    │   ├── main.jsx
-    │   └── App.css
-    ├── .env                 <-- Variables de entorno del front
-    ├── package.json
-    ├── vite.config.js
-    └── Dockerfile           <-- (Opcional) [cite: 161]
+├── frontend/                   # Cliente Web (React + Vite)
+│   ├── public/
+│   ├── src/
+│   │   ├── components/         # Componentes reutilizables (Botones, Cards)
+│   │   ├── context/            # Gestión de estado global (Auth) [Requisito 4.1]
+│   │   ├── pages/              # Vistas principales (Rutas) [Requisito 4.1]
+│   │   │   ├── Login.jsx
+│   │   │   ├── Catalog.jsx
+│   │   │   └── Library.jsx
+│   │   ├── App.jsx             # Configuración de Rutas
+│   │   └── main.jsx
+│   ├── .env                    # Variables de entorno del cliente
+│   └── vite.config.js
+│
+├── database.sql                # Script de creación de tablas [Requisito 1]
+├── README.md                   # Documentación del proyecto [Requisito 8]
+└── docker-compose.yml          # (Opcional) Orquestación de contenedores
 ## Usuario de prueba
