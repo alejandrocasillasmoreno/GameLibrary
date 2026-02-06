@@ -12,16 +12,55 @@ personal de videojuegos de forma centralizada.
 
 ## Estructura del proyecto
 GameLibrary/
-├── node_modules/       # Dependencias
-├── src/
-│   ├── components/     # Piezas de la UI
-│   │   ├── Login.jsx       # Autenticación
-│   │   ├── Catalog.jsx     # Buscador API Externa
-│   │   └── Library.jsx     # CRUD Personal
-│   ├── App.jsx         # Orquestador de rutas
-│   ├── App.css         # Estilos globales (Tema Oscuro)
-│   └── main.jsx        # Punto de entrada React
-├── app.js              # Servidor Express y Configuración DB
-├── package.json        # Gestor de dependencias
-└── README.md           # Documentación
+├── README.md                <-- OBLIGATORIO: Debe incluir los puntos del apartado 8 [cite: 129]
+├── .gitignore               <-- Para ignorar node_modules y .env
+├── docker-compose.yml       <-- (Opcional) Si decides usar Docker para subir nota [cite: 161]
+│
+├── backend/                 <-- Cumple requisito de separación [cite: 124]
+│   ├── src/
+│   │   ├── config/          <-- Conexión a BD y variables de entorno 
+│   │   │   └── db.js
+│   │   ├── controllers/     <-- Lógica de las peticiones (Requisito 4.2) [cite: 75]
+│   │   │   ├── authController.js
+│   │   │   ├── gameController.js
+│   │   │   └── userLibraryController.js
+│   │   ├── middleware/      <-- Para autenticación y gestión de errores [cite: 88, 113]
+│   │   │   ├── authMiddleware.js
+│   │   │   └── errorMiddleware.js
+│   │   ├── models/          <-- Acceso a datos (MySQL/Mongo) [cite: 78]
+│   │   │   ├── User.js
+│   │   │   ├── Game.js
+│   │   │   └── UserLibrary.js
+│   │   ├── routes/          <-- Definición de endpoints (Requisito 4.2) [cite: 73]
+│   │   │   ├── authRoutes.js
+│   │   │   └── libraryRoutes.js
+│   │   └── app.js           <-- Configuración de Express [cite: 71]
+│   ├── .env                 <-- Variables de entorno (OBLIGATORIO) 
+│   ├── package.json
+│   └── Dockerfile           <-- (Opcional) [cite: 161]
+│
+└── frontend/                <-- Cumple requisito de separación [cite: 123]
+    ├── public/
+    ├── src/
+    │   ├── api/             <-- Configuración de Axios/Fetch 
+    │   │   └── axiosConfig.js
+    │   ├── components/      <-- Componentes reutilizables
+    │   │   ├── Navbar.jsx
+    │   │   ├── GameCard.jsx
+    │   │   └── ProtectedRoute.jsx
+    │   ├── context/         <-- Gestión de estado (Context API) 
+    │   │   └── AuthContext.jsx
+    │   ├── pages/           <-- Vistas para React Router 
+    │   │   ├── Login.jsx
+    │   │   ├── Register.jsx
+    │   │   ├── Catalog.jsx
+    │   │   └── MyLibrary.jsx
+    │   ├── hooks/           <-- Lógica personalizada (recomendado)
+    │   ├── App.jsx
+    │   ├── main.jsx
+    │   └── App.css
+    ├── .env                 <-- Variables de entorno del front
+    ├── package.json
+    ├── vite.config.js
+    └── Dockerfile           <-- (Opcional) [cite: 161]
 ## Usuario de prueba
