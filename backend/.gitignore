@@ -1,0 +1,17 @@
+# Node modules
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Entorno
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/

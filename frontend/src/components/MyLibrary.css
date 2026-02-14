@@ -1,0 +1,62 @@
+/* ========================================
+   ESTILOS DE MY LIBRARY - ACCESIBILIDAD
+   ======================================== */
+
+.library-container {
+  padding: 20px;
+  min-height: 100vh;
+  color: white;
+}
+
+/* Selectores con buen contraste */
+select {
+  background-color: #444;
+  color: #fff;
+  border: 1px solid #666;
+  padding: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+select:focus {
+  outline: 2px solid #646cff;
+  outline-offset: 2px;
+}
+
+/* Mejorar contraste de opciones */
+option {
+  background-color: #333;
+  color: #fff;
+  padding: 8px;
+}
+
+option:checked {
+  background: linear-gradient(#646cff, #533a99);
+  color: white;
+}
+
+/* Labels para selectores */
+label {
+  color: #ccc;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* Botones con buen contraste */
+button {
+  transition: all 0.3s ease;
+}
+
+button:focus {
+  outline: 2px solid #646cff;
+  outline-offset: 2px;
+}
+
+/* Textos con contraste mejorado */
+p, span, div {
+  color: inherit;
+}
