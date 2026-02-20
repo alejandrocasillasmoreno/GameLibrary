@@ -1,130 +1,101 @@
-import { useEffect, useState } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
-import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext'; // ✅ IMPORTANTE
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import './Dashboard.css'; // Crearemos este CSS ahora
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
+import './Dashboard.css';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function Dashboard() {
-  const { user } = useAuth(); // ✅ Usamos el contexto
+  const { user } = useAuth();
+  const [library, setLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Estados para las métricas
-  const [stats, setStats] = useState({
-    totalGames: 0,
-    completedGames: 0,
-    playingGames: 0,
-    droppedGames: 0,
-    pendingGames: 0,
-    completionRate: 0
-  });
+
+  // Estadísticas personales calculadas
+  const totalGames = library.length;
+  const completed = library.filter(g => g.status === 'completed').length;
+  const playing = library.filter(g => g.status === 'playing').length;
+  const pending = library.filter(g => g.status === 'pending').length;
+  const dropped = library.filter(g => g.status === 'dropped').length;
+  const completionRate = totalGames > 0 ? Math.round((completed / totalGames) * 100) : 0;
 
   useEffect(() => {
+    const fetchLibrary = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/api/library/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Error al cargar biblioteca');
+        const data = await res.json();
+        console.log('📊 Datos de biblioteca en Dashboard:', data);
+        setLibrary(data);
+      } catch (error) {
+        console.error(error);
+        toast.error('No se pudo cargar tu biblioteca');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (user) {
-      calculateStats();
+      fetchLibrary();
     }
   }, [user]);
 
-  const calculateStats = async () => {
-    try {
-      console.log("📊 Calculando estadísticas para usuario:", user?.id);
-      
-      // ♻️ TRUCO: Reutilizamos el endpoint que YA FUNCIONA
-      const res = await fetch(`http://localhost:3000/api/library/${user.id}`);
-      console.log("📥 Respuesta del servidor - Status:", res.status);
-      
-      if (!res.ok) throw new Error(`Error al cargar datos: ${res.status}`);
-      
-      const games = await res.json();
-      console.log("📥 Juegos recibidos:", games);
+  if (!user) {
+    return (
+      <div className="dashboard-container">
+        <h2>Panel de Usuario</h2>
+        <p>Debes iniciar sesión para ver tus estadísticas.</p>
+        <Link to="/login" className="btn-primary">Ir a Login</Link>
+      </div>
+    );
+  }
 
-      // 🧮 CALCULADORA DE ESTADÍSTICAS EN FRONTEND
-      const total = games.length;
-      const completed = games.filter(g => g.status === 'completed').length;
-      const playing = games.filter(g => g.status === 'playing').length;
-      const dropped = games.filter(g => g.status === 'dropped').length;
-      const pending = games.filter(g => g.status === 'pending').length;
-
-      console.log("📊 Estadísticas calculadas:", { total, completed, playing, dropped, pending });
-
-      setStats({
-        totalGames: total,
-        completedGames: completed,
-        playingGames: playing,
-        droppedGames: dropped,
-        pendingGames: pending,
-        completionRate: total > 0 ? Math.round((completed / total) * 100) : 0
-      });
-
-    } catch (error) {
-      console.error("❌ Error en calculateStats:", error);
-      toast.error('No se pudieron cargar las estadísticas');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="loading-container">Cargando métricas... 📊</div>;
-
-  if (!user) return <div className="loading-container">Inicia sesión para ver tus estadísticas</div>;
-
-  // Configuración del Gráfico
-  const chartData = {
-    labels: ['Pendientes', 'Jugando', 'Completados', 'Abandonados'],
-    datasets: [
-      {
-        data: [stats.pendingGames, stats.playingGames, stats.completedGames, stats.droppedGames],
-        backgroundColor: ['#f1c40f', '#3498db', '#2ecc71', '#e74c3c'],
-        borderWidth: 1,
-        borderColor: '#222'
-      }
-    ]
-  };
+  if (loading) {
+    return <div className="dashboard-container"><div className="loading">Cargando tus datos...</div></div>;
+  }
 
   return (
     <div className="dashboard-container">
-      <h2 className="dashboard-title">
-         Resumen de {user.username} 🎮
-      </h2>
+      <h2>📊 Panel de {user.name}</h2>
 
-      {/* GRID DE TARJETAS */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-number">{stats.totalGames}</div>
-          <div className="stat-label">Juegos Totales</div>
-        </div>
-
-        <div className="stat-card highlight">
-          <div className="stat-number">{stats.completedGames}</div>
-          <div className="stat-label">Completados 🏆</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-number">{stats.playingGames}</div>
-          <div className="stat-label">Jugando Ahora</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-number">{stats.completionRate}%</div>
-          <div className="stat-label">Tasa de Éxito</div>
+      {/* Estadísticas personales */}
+      <div className="stats-section">
+        <h3>Tu colección</h3>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <span className="stat-value">{totalGames}</span>
+            <span className="stat-label">Juegos totales</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{completed}</span>
+            <span className="stat-label">Completados 🏆</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{playing}</span>
+            <span className="stat-label">Jugando 🎮</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{pending}</span>
+            <span className="stat-label">Pendientes ⏳</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{dropped}</span>
+            <span className="stat-label">Abandonados ❌</span>
+          </div>
+          <div className="stat-card highlight">
+            <span className="stat-value">{completionRate}%</span>
+            <span className="stat-label">Tasa de éxito</span>
+          </div>
         </div>
       </div>
 
-      {/* GRÁFICO O MENSAJE VACÍO */}
-      <div className="chart-section">
-        {stats.totalGames === 0 ? (
-          <div className="empty-state">
-            <p>Todavía no tienes juegos en tu biblioteca.</p>
-            <Link to="/" className="btn-action">Ir al Catálogo</Link>
-          </div>
-        ) : (
-          <div className="pie-chart-wrapper">
-             <Pie data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
-          </div>
-        )}
+      {/* Enlaces rápidos */}
+      <div className="quick-links">
+        <Link to="/library" className="btn-secondary">Ir a mi biblioteca</Link>
+        <Link to="/catalog" className="btn-primary">Explorar catálogo</Link>
       </div>
     </div>
   );

@@ -1,151 +1,156 @@
 import { useState, useEffect } from 'react';
-import toast from 'react-hot-toast'; // Importamos toast para las notificaciones
+import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+import './Library.css'; // Usamos el archivo Library.css
 
-function Library() {
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Mapeo de estados al español (para mostrar)
+const statusMap = {
+    pending: { es: 'Pendiente', emoji: '⏳', color: '#f39c12' },
+    playing: { es: 'Jugando', emoji: '🎮', color: '#3498db' },
+    completed: { es: 'Terminado', emoji: '🏆', color: '#2ecc71' },
+    dropped: { es: 'Abandonado', emoji: '❌', color: '#e74c3c' }
+};
+
+function MyLibrary() {
+    const { user } = useAuth();
     const [games, setGames] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // 1. CARGAR JUEGOS AL INICIAR
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem('user'));
-        
         if (user) {
-            fetch(`http://localhost:3000/api/library/${user.id}`) // Asegúrate de tener esta ruta GET en tu backend
-                .then(res => res.json())
-                .then(data => {
-                    setGames(data);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error("Error cargando biblioteca:", err);
-                    setLoading(false);
-                });
+            fetchGames();
         } else {
             setLoading(false);
         }
-    }, []);
+    }, [user]);
 
-    // 2. FUNCIÓN PARA CAMBIAR ESTADO (CORREGIDA ✅)
+    const fetchGames = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/library/${user.id}`);
+            if (!res.ok) throw new Error('Error al cargar');
+            const data = await res.json();
+            setGames(data);
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al cargar la biblioteca');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleStatusChange = async (id, newStatus) => {
-        // Actualización optimista: Cambiamos la pantalla YA para que se sienta rápido
+        // Actualización optimista
+        const previousGames = [...games];
         setGames(games.map(game => 
             game.id === id ? { ...game, status: newStatus } : game
         ));
 
         try {
-            // 👇 AQUÍ ESTABA EL ERROR: Cambiado '/update/' por '/status/'
-            const response = await fetch(`http://localhost:3000/api/library/status/${id}`, {
+            const res = await fetch(`${API_URL}/api/library/status/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }) 
+                body: JSON.stringify({ status: newStatus })
             });
-
-            if (!response.ok) {
-                throw new Error('Error al guardar en base de datos');
-            }
-            toast.success("Estado actualizado correctamente");
-            console.log("✅ Estado guardado en BD");
-
+            if (!res.ok) throw new Error('Error al actualizar');
+            toast.success(`Estado actualizado a ${statusMap[newStatus]?.es}`);
         } catch (error) {
-            console.error("Error de conexión:", error);
-            toast.error("No se pudo guardar el cambio");
-            // Si falla, revertimos el cambio visual (opcional)
+            console.error(error);
+            toast.error('No se pudo actualizar el estado');
+            setGames(previousGames); // Revertir cambio
         }
     };
 
-    // 3. FUNCIÓN PARA ELIMINAR JUEGO
-    const handleDelete = async (id) => {
-        if (!confirm("¿Seguro que quieres eliminar este juego?")) return;
-
-        // Quitamos de la vista inmediatamente
-        setGames(games.filter(g => g.id !== id));
-
-        try {
-            const user = JSON.parse(localStorage.getItem('user'));
-            // Asegúrate de tener una ruta DELETE en tu backend para esto
-            await fetch(`http://localhost:3000/api/library/${id}`, { 
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id })
-            });
-            toast.success("Juego eliminado");
-        } catch (error) {
-            console.error("Error al eliminar:", error);
-            toast.error("Error al eliminar");
-        }
-    };
-
-    // 4. RENDERIZADO
-    return (
-        <div className="p-6 bg-gray-900 min-h-screen text-white">
-            <h2 className="text-3xl font-bold mb-6 text-center text-green-400">Mi Colección de Juegos</h2>
-
-            {loading ? (
-                <p className="text-center text-gray-200">Cargando juegos...</p>
-            ) : games.length === 0 ? (
-                <div className="text-center mt-10">
-                    <p className="text-xl text-gray-200">Tu biblioteca está vacía.</p>
-                    <p className="text-sm text-gray-300 mt-2">Ve al buscador y añade tu primer juego.</p>
+    const confirmDelete = (id) => {
+        toast((t) => (
+            <div className="delete-confirm">
+                <span>¿Eliminar este juego?</span>
+                <div>
+                    <button onClick={() => handleDelete(id, t.id)}>Sí</button>
+                    <button onClick={() => toast.dismiss(t.id)}>No</button>
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {games.map((game) => (
-                        <div key={game.id} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700 hover:border-green-500 transition duration-300">
-                            
-                            {/* Imagen del Juego */}
-                            <div className="h-48 overflow-hidden relative">
+            </div>
+        ), { duration: 5000 });
+    };
+
+    const handleDelete = async (id, toastId) => {
+        toast.dismiss(toastId);
+        try {
+            const res = await fetch(`${API_URL}/api/library/${id}`, {
+                method: 'DELETE'
+            });
+            if (!res.ok) throw new Error('Error al eliminar');
+            setGames(games.filter(game => game.id !== id));
+            toast.success('Juego eliminado');
+        } catch (error) {
+            console.error(error);
+            toast.error('No se pudo eliminar');
+        }
+    };
+
+    if (loading) return <div className="library-loading">Cargando tu colección...</div>;
+    if (!user) return (
+        <div className="auth-message">
+            <h2>Inicia sesión para ver tu biblioteca</h2>
+            <Link to="/login">Ir al Login</Link>
+        </div>
+    );
+    if (games.length === 0) return (
+        <div className="empty-library">
+            <h2>Tu biblioteca está vacía</h2>
+            <p>¡Añade algunos juegos desde el catálogo!</p>
+            <Link to="/catalog" className="library-btn">Ir al Catálogo</Link>
+        </div>
+    );
+
+    return (
+        <div className="library">
+            <h2>Mi Biblioteca 📚 ({games.length})</h2>
+            <div className="library-grid">
+                {games.map(game => (
+                    <div key={game.id} className="library-card">
+                        <div className="library-image-wrapper">
+                            <Link to={`/library/${game.id}`}>
                                 <img 
-                                    src={game.imagen_url || 'https://via.placeholder.com/300x200?text=No+Image'} 
-                                    alt={game.titulo} 
-                                    className="w-full h-full object-cover"
+                                    src={game.imagen_url || '/placeholder.jpg'} 
+                                    alt={game.titulo}
+                                    className="library-image"
+                                    onError={(e) => e.target.src = '/placeholder.jpg'}
                                 />
-                                <div className="absolute top-0 right-0 bg-black bg-opacity-70 text-white text-xs px-2 py-1 m-2 rounded">
-                                    {game.plataforma || 'Juego'}
-                                </div>
+                            </Link>
+                            <div className="game-overlay">
+                                <span className="library-status-badge" style={{ background: statusMap[game.status]?.color }}>
+                                    {statusMap[game.status]?.emoji} {statusMap[game.status]?.es}
+                                </span>
                             </div>
-
-                            {/* Contenido de la Tarjeta */}
-                            <div className="p-4">
-                                <h3 className="font-bold text-lg mb-1 truncate" title={game.titulo}>
-                                    {game.titulo}
-                                </h3>
-
-                                {/* SELECTOR DE ESTADO */}
-                                <div className="mt-4">
-                                    <label htmlFor={`status-select-${game.id}`} className="text-xs text-gray-200 block mb-1 uppercase font-bold">Estado:</label>
-                                    <select 
-                                        id={`status-select-${game.id}`}
-                                        value={game.status || 'pendiente'} 
-                                        onChange={(e) => handleStatusChange(game.id, e.target.value)}
-                                        className={`w-full p-2 rounded text-sm font-semibold outline-none cursor-pointer text-white transition-colors
-                                            ${game.status === 'pendiente' ? 'bg-yellow-700 hover:bg-yellow-600' : ''}
-                                            ${game.status === 'jugando' ? 'bg-blue-700 hover:bg-blue-600' : ''}
-                                            ${game.status === 'completado' ? 'bg-green-700 hover:bg-green-600' : ''}
-                                            ${game.status === 'abandonado' ? 'bg-red-700 hover:bg-red-600' : ''}
-                                            ${!game.status ? 'bg-gray-700' : ''} 
-                                        `}
-                                    >
-                                        <option value="pendiente" className="bg-gray-800">⏳ Pendiente</option>
-                                        <option value="jugando" className="bg-gray-800">🎮 Jugando</option>
-                                        <option value="completado" className="bg-gray-800">✅ Completado</option>
-                                        <option value="abandonado" className="bg-gray-800">❌ Abandonado</option>
-                                    </select>
-                                </div>
-
-                                {/* Botón Eliminar */}
-                                <button 
-                                    onClick={() => handleDelete(game.id)}
-                                    className="mt-4 w-full bg-red-700 hover:bg-red-600 text-white py-1 px-3 rounded text-sm transition border border-red-600"
+                        </div>
+                        <div className="library-info">
+                            <h3 className="game-title">{game.titulo}</h3>
+                            <div className="game-meta">
+                                <span className="game-genre">{game.plataforma}</span>
+                            </div>
+                            <div className="game-actions">
+                                <select
+                                    value={game.status}
+                                    onChange={(e) => handleStatusChange(game.id, e.target.value)}
+                                    className="btn-secondary"
                                 >
-                                    Eliminar de la lista
+                                    {Object.entries(statusMap).map(([key, val]) => (
+                                        <option key={key} value={key}>{val.emoji} {val.es}</option>
+                                    ))}
+                                </select>
+                                <button className="library-remove-btn" onClick={() => confirmDelete(game.id)}>
+                                    Eliminar
                                 </button>
                             </div>
                         </div>
-                    ))}
-                </div>
-            )}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
 
-export default Library;
+export default MyLibrary;

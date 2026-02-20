@@ -1,0 +1,13 @@
+{
+  "applications": {
+    "backend": {
+      "type": "nodejs",
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "hooks": {
+        "postdeploy": "npm run build"
+      }
+    }
+  }
+}

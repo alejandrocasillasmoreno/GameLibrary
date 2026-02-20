@@ -20,16 +20,21 @@ export const AuthProvider = ({ children }) => {
 
   // A. EFECTO DE INICIO: Comprobar si ya hay un usuario guardado
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Error al leer usuario del storage", error);
-        localStorage.removeItem('user'); // Si está corrupto, lo borramos
+    const checkAuth = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+        } catch (error) {
+          console.error("Error al leer usuario del storage", error);
+          localStorage.removeItem('user'); // Si está corrupto, lo borramos
+        }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+    
+    checkAuth();
   }, []);
 
   // B. FUNCIÓN DE REGISTRO (Sign Up)
@@ -45,6 +50,11 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         toast.success('¡Registro exitoso! Ahora inicia sesión.');
+        // ✅ GUARDAR EL TOKEN JWT también en registro (para auto-login)
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          console.log('Token guardado en registro:', data.token.substring(0, 20) + '...');
+        }
         return true; // Éxito
       } else {
         toast.error(data.message || 'Error en el registro');
@@ -71,10 +81,18 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         // Extraemos los datos del usuario de la respuesta
         const userData = data.user || data;
+        console.log('Usuario logueado:', userData);
         // Guardamos el usuario en el Estado y en LocalStorage
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
-        toast.success(`¡Bienvenido, ${userData.username}!`);
+        
+        // ✅ GUARDAR EL TOKEN JWT (esto estaba faltando)
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          console.log('Token guardado en localStorage:', data.token.substring(0, 20) + '...');
+        }
+        
+        toast.success(`¡Bienvenido, ${userData.name}!`);
         return true;
       } else {
         toast.error(data.message || 'Credenciales incorrectas');
@@ -94,12 +112,43 @@ export const AuthProvider = ({ children }) => {
     toast('¡Hasta pronto! 👋', { icon: '🚪' });
   };
 
+  // Funciones para verificar roles y permisos
+  const hasRole = (roleName) => {
+    return user && user.role === roleName;
+  };
+
+  const hasPermission = (permissionName) => {
+    return user && user.permissions && user.permissions.some(p => p.name === permissionName);
+  };
+
+  const hasAnyPermission = (permissionNames) => {
+    return user && user.permissions && 
+           user.permissions.some(p => permissionNames.includes(p.name));
+  };
+
+  const isAdmin = () => {
+    return hasRole('admin');
+  };
+
   // 4. Exponemos los datos y funciones a toda la app
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login, 
+      register, 
+      logout,
+      // Funciones de autorización
+      hasRole,
+      hasPermission,
+      hasAnyPermission,
+      isAdmin
+    }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export default AuthContext;
+
+

@@ -21,7 +21,7 @@ function Login() {
 
     if (success) {
       // Si el login fue bien, redirigimos al catálogo
-      navigate('/'); 
+      navigate('/catalog'); 
     }
     // Nota: No hace falta mostrar Toast de error aquí, 
     // porque el AuthContext ya se encarga de eso.

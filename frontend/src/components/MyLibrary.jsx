@@ -1,302 +1,273 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext'; // ✅ CORREGIDO: Importamos del Contexto
-import './Library.css';
+import { useAuth } from '../context/AuthContext';
 import './MyLibrary.css';
 
-// 🌍 MAPEO DE ESTADOS AL ESPAÑOL
-const statusMap = {
-  'pending': { es: 'Pendiente', emoji: '⏳', color: '#f39c12' },
-  'playing': { es: 'Jugando', emoji: '🎮', color: '#3498db' },
-  'completed': { es: 'Terminado', emoji: '🏆', color: '#2ecc71' },
-  'dropped': { es: 'Abandonado', emoji: '❌', color: '#e74c3c' }
-};
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// 🌟 Función para convertir rating en estrellas visuales
-const renderStars = (rating) => {
-  if (!rating || rating === 0) return '☆☆☆☆☆';
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 > 0.5;
-  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-  
-  return (
-    '★'.repeat(fullStars) +
-    (hasHalfStar ? '⯨' : '') +
-    '☆'.repeat(emptyStars)
-  );
+// Mapeo de estados para mostrar en español
+const statusMap = {
+  pending: { label: 'Pendiente', emoji: '⏳', color: '#f39c12' },
+  playing: { label: 'Jugando', emoji: '🎮', color: '#3498db' },
+  completed: { label: 'Completado', emoji: '🏆', color: '#2ecc71' },
+  dropped: { label: 'Abandonado', emoji: '❌', color: '#e74c3c' }
 };
 
 function MyLibrary() {
   const { user } = useAuth();
   const [games, setGames] = useState([]);
+  const [filteredGames, setFilteredGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('todos');
+  const [filterMinRating, setFilterMinRating] = useState(0);
+  const [deletingId, setDeletingId] = useState(null);
 
+  // Cargar juegos de la biblioteca
   useEffect(() => {
-    if (user && user.id) {
-      fetchGames(user.id);
-    } else {
-      setLoading(false);
-    }
+    const fetchGames = async () => {
+      if (!user) return;
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/api/library/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Error al cargar la biblioteca');
+        const data = await res.json();
+        setGames(data);
+        setFilteredGames(data); // inicialmente mostramos todos
+      } catch (error) {
+        console.error(error);
+        toast.error('No se pudo cargar tu biblioteca');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGames();
   }, [user]);
 
-  const fetchGames = async (userId) => {
-    try {
-      console.log("📚 Cargando biblioteca para usuario:", userId);
-      const response = await fetch(`http://localhost:3000/api/library/${userId}`);
-      console.log("📥 Status de respuesta:", response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log("📥 Juegos cargados:", data);
-        // Ordenamos para que los últimos añadidos salgan primero
-        setGames(data.reverse()); 
-      } else {
-        console.error("❌ Error al cargar: Status", response.status);
-        toast.error('Error al cargar la biblioteca');
-      }
-    } catch (error) {
-      console.error('❌ Error cargando biblioteca:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Aplicar filtros cada vez que cambien los juegos, el estado o la puntuación mínima
+  useEffect(() => {
+    let result = [...games];
 
-  const handleStatusChange = async (id, newStatus) => {
-    console.log(`🔄 Intentando cambiar estado del juego ID ${id} a: ${newStatus}`);
-    
-    // 1. Copia de seguridad por si falla
+    // Filtrar por estado
+    if (filterStatus !== 'todos') {
+      result = result.filter(game => game.status === filterStatus);
+    }
+
+    // Filtrar por puntuación mínima
+    if (filterMinRating > 0) {
+      result = result.filter(game => (game.valoracion || 0) >= filterMinRating);
+    }
+
+    setFilteredGames(result);
+  }, [games, filterStatus, filterMinRating]);
+
+  const handleStatusChange = async (entryId, newStatus) => {
     const previousGames = [...games];
-    
-    // 2. Optimistic UI: Lo cambiamos visualmente YA, sin esperar al servidor
+    // Optimistic update
     setGames(games.map(game => 
-        game.id === id ? { ...game, status: newStatus } : game
+      game.id === entryId ? { ...game, status: newStatus } : game
     ));
 
     try {
-        const response = await fetch(`http://localhost:3000/api/library/status/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-        });
-        
-        console.log(`📡 Respuesta del servidor - Status: ${response.status}`);
-        
-        if (response.ok) {
-            const responseData = await response.json();
-            console.log(`✅ Estado actualizado:`, responseData);
-            toast.success(`Estado actualizado a: ${newStatus.toUpperCase()}`);
-        } else {
-            throw new Error(`Fallo al guardar - Status: ${response.status}`);
-        }
-    } catch (error) {
-        console.error("❌ Error al actualizar:", error);
-        toast.error("No se pudo guardar el cambio");
-        setGames(previousGames); // Deshacemos el cambio si falló
-    }
-  };
-
-  // 🌟 FUNCIÓN PARA ACTUALIZAR VALORACIÓN
-  const handleRatingChange = async (id, newRating) => {
-    console.log(`⭐ Intentando cambiar valoración del juego ID ${id} a: ${newRating}`);
-    
-    const previousGames = [...games];
-    
-    // Optimistic UI
-    setGames(games.map(game => 
-        game.id === id ? { ...game, valoracion: newRating } : game
-    ));
-
-    try {
-        const response = await fetch(`http://localhost:3000/api/library/status/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ valoracion: newRating })
-        });
-        
-        if (response.ok) {
-            toast.success(`⭐ Puntuación actualizada a ${newRating}`);
-        } else {
-            throw new Error(`Fallo al guardar`);
-        }
-    } catch (error) {
-        console.error("❌ Error al actualizar valoración:", error);
-        toast.error("No se pudo guardar la puntuación");
-        setGames(previousGames);
-    }
-  };
-
-  // --- LÓGICA DE ELIMINAR ---
-  
-  // 1. Función que ejecuta el borrado real
-  const executeDelete = async (rowId, toastId) => {
-    toast.dismiss(toastId); // Quitamos la notificación de confirmación
-
-    try {
-      const response = await fetch(`http://localhost:3000/api/library/${rowId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/library/status/${entryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
       });
-
-      if (response.ok) {
-        // Filtramos usando rowId
-        setGames((prev) => prev.filter(g => g.id !== rowId));
-        toast.success('Juego eliminado correctamente');
-      } else {
-        toast.error('Error al eliminar');
-      }
+      if (!res.ok) throw new Error('Error al actualizar');
+      toast.success(`Estado cambiado a ${statusMap[newStatus]?.label}`);
     } catch (error) {
       console.error(error);
-      toast.error('Error de conexión');
+      toast.error('No se pudo actualizar el estado');
+      setGames(previousGames); // revertir cambio
     }
   };
 
-  // 2. Función que muestra la confirmación bonita
-  const confirmDelete = (rowId) => {
-    toast((t) => (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
-        <span style={{ fontWeight: 'bold' }}>¿Eliminar este juego? 🗑️</span>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            onClick={() => executeDelete(rowId, t.id)}
-            style={{ background: '#e74c3c', color: 'white', border: 'none', padding: '5px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-          >
-            Sí, borrar
-          </button>
-          <button 
-            onClick={() => toast.dismiss(t.id)}
-            style={{ background: '#6c757d', color: 'white', border: 'none', padding: '5px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    ), {
-        duration: 5000,
-        position: 'top-center',
-        style: { background: '#222', color: '#fff', border: '1px solid #444' }
-    });
+  const handleRatingChange = async (entryId, newRating) => {
+    // Guardamos copia por si falla
+    const previousGames = [...games];
+    
+    // Actualización optimista
+    setGames(games.map(game => 
+      game.id === entryId ? { ...game, valoracion: newRating } : game
+    ));
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/library/${entryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ valoracion: newRating })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al actualizar');
+      }
+
+      toast.success(`Puntuación: ${'★'.repeat(newRating)}`);
+    } catch (error) {
+      console.error('Error en rating:', error);
+      toast.error('No se pudo guardar la puntuación');
+      // Revertir cambio
+      setGames(previousGames);
+    }
   };
 
-  // --- RENDERIZADO ---
+  const confirmDelete = (entryId) => {
+    toast((t) => (
+      <div className="delete-confirm">
+        <p>¿Eliminar este juego de tu biblioteca?</p>
+        <div className="delete-confirm-actions">
+          <button className="btn-confirm-yes" onClick={() => handleDelete(entryId, t.id)}>Sí</button>
+          <button className="btn-confirm-no" onClick={() => toast.dismiss(t.id)}>No</button>
+        </div>
+      </div>
+    ), { duration: 8000 });
+  };
 
-  if (loading) return <div style={{textAlign:'center', marginTop:'50px', color:'white'}}>Cargando tu colección...</div>;
+  const handleDelete = async (entryId, toastId) => {
+    toast.dismiss(toastId);
+    setDeletingId(entryId);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/library/${entryId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Error al eliminar');
+      setGames(games.filter(game => game.id !== entryId));
+      toast.success('Juego eliminado');
+    } catch (error) {
+      console.error(error);
+      toast.error('No se pudo eliminar');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (!user) {
-      return (
-        <div style={{ textAlign: 'center', marginTop: '50px', color: 'white' }}>
-            <h2>Inicia sesión para ver tu biblioteca 🔒</h2>
-            <Link to="/login" className="btn" style={{background: '#646cff', color: 'white', padding: '10px 20px', textDecoration:'none', borderRadius:'5px'}}>Ir al Login</Link>
-        </div>
-      )
-  }
-
-  if (games.length === 0) {
     return (
-      <div style={{ textAlign: 'center', marginTop: '50px', color: 'white' }}>
-        <h2>Tu biblioteca está vacía 😢</h2>
-        <p>¡Añade algunos juegos desde el catálogo!</p>
-        <br />
-        <Link to="/" style={{ color: '#646cff', fontSize: '1.2rem' }}>Ir al Catálogo de Juegos</Link>
+      <div className="my-library">
+        <h2>Mi Biblioteca</h2>
+        <p>Inicia sesión para ver tu colección.</p>
+        <Link to="/login" className="btn-primary">Ir a Login</Link>
       </div>
     );
   }
 
+  if (loading) return <div className="loading">Cargando tu biblioteca...</div>;
+
   return (
-    <div className="library-container" style={{ padding: '20px', minHeight: '100vh', color: 'white' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
-        Mi Colección 📚 ({games.length})
-      </h2>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
-        {games.map((game) => (
-          <div key={game.id} style={{ border: '1px solid #444', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#1E1E1E', position: 'relative', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-            
-            {/* IMAGEN Y ESTRELLAS */}
-            <div style={{ height: '150px', position: 'relative' }}>
-                <img 
-                    src={game.imagen_url || 'https://via.placeholder.com/300?text=No+Image'} 
-                    alt={game.titulo} 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Error+Img'; }}
-                />
-                
-                {/* Badge de Rating Interactivo */}
-                <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.9)', padding: '8px 12px', borderTopLeftRadius: '10px', cursor: 'pointer', userSelect: 'none' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        <div style={{ color: '#f1c40f', fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '1px' }}>
-                            {renderStars(game.valoracion)}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#ddd' }}>
-                            {game.valoracion > 0 ? Number(game.valoracion).toFixed(1) : 'Sin nota'}
-                        </div>
-                    </div>
-                    
-                    {/* Estrellas interactivas para calificar */}
-                    <div style={{ display: 'flex', gap: '2px', marginTop: '6px', justifyContent: 'center' }}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <span
-                                key={star}
-                                onClick={() => handleRatingChange(game.id, star)}
-                                style={{
-                                    fontSize: '0.8rem',
-                                    cursor: 'pointer',
-                                    opacity: star <= Math.round(game.valoracion) ? 1 : 0.4,
-                                    transition: 'all 0.2s',
-                                    transform: 'scale(1)'
-                                }}
-                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.2)'}
-                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                                title={`Puntuación: ${star}/5`}
-                            >
-                                ★
-                            </span>
-                        ))}
-                    </div>
-                </div>
+    <div className="my-library">
+      <h2>Mi Biblioteca 📚 ({games.length})</h2>
 
-                {/* Badge de Estado */}
-                <div style={{ position: 'absolute', top: 0, left: 0, background: statusMap[game.status]?.color || '#555', padding: '5px 10px', borderBottomRightRadius: '10px', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                    {statusMap[game.status]?.emoji} {statusMap[game.status]?.es || game.status}
-                </div>
-            </div>
-            
-            <div style={{ padding: '15px' }}>
-              <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={game.titulo}>
-                {game.titulo}
-              </h3>
-              <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: '10px' }}>
-                {game.plataforma}
-              </p>
-              
-              {/* SELECTOR DE ESTADO */}
-              <label htmlFor={`status-select-${game.id}`} style={{fontSize: '0.8rem', color: '#ccc', fontWeight: '600', display: 'block', marginBottom: '5px'}}>Estado:</label>
-              <select 
-                  id={`status-select-${game.id}`}
-                  value={game.status || 'pending'} 
-                  onChange={(e) => handleStatusChange(game.id, e.target.value)}
-                  style={{ width: '100%', padding: '8px', marginTop: '5px', borderRadius: '5px', background: '#444', color: '#fff', border: '1px solid #666', cursor: 'pointer', fontWeight: '500' }}
-              >
-                  {Object.entries(statusMap).map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value.emoji} {value.es}
-                    </option>
-                  ))}
-              </select>
+      {/* Barra de filtros */}
+      <div className="filters-bar">
+        <div className="filter-group">
+          <label htmlFor="status-filter">Estado:</label>
+          <select
+            id="status-filter"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="todos">Todos</option>
+            {Object.entries(statusMap).map(([key, val]) => (
+              <option key={key} value={key}>
+                {val.emoji} {val.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-              {/* BOTÓN ELIMINAR */}
-              <button 
-                onClick={() => confirmDelete(game.id)} 
-                style={{ width: '100%', marginTop: '15px', padding: '8px', background: '#e74c3c', border: 'none', color: 'white', borderRadius: '5px', cursor: 'pointer', transition: 'all 0.3s', fontWeight: '600' }}
-                onMouseOver={(e) => e.target.style.background = '#c0392b'}
-                onMouseOut={(e) => e.target.style.background = '#e74c3c'}
-              >
-                Eliminar de la lista
-              </button>
-            </div>
-          </div>
-        ))}
+        <div className="filter-group">
+          <label htmlFor="rating-filter">Puntuación mínima:</label>
+          <select
+            id="rating-filter"
+            value={filterMinRating}
+            onChange={(e) => setFilterMinRating(Number(e.target.value))}
+          >
+            <option value="0">Cualquiera</option>
+            <option value="1">⭐ 1+</option>
+            <option value="2">⭐⭐ 2+</option>
+            <option value="3">⭐⭐⭐ 3+</option>
+            <option value="4">⭐⭐⭐⭐ 4+</option>
+            <option value="5">⭐⭐⭐⭐⭐ 5</option>
+          </select>
+        </div>
+
+        <span className="filter-count">
+          Mostrando {filteredGames.length} de {games.length} juegos
+        </span>
       </div>
+
+      {filteredGames.length === 0 ? (
+        <div className="empty-library">
+          <p>No hay juegos que coincidan con los filtros.</p>
+          <button className="btn-secondary" onClick={() => { setFilterStatus('todos'); setFilterMinRating(0); }}>
+            Limpiar filtros
+          </button>
+        </div>
+      ) : (
+        <div className="games-grid">
+          {filteredGames.map(game => (
+            <div key={game.id} className="game-card">
+              <div className="card-image">
+                <Link to={`/library/${game.id}`}>
+                  <img
+                    src={game.imagen_url || '/placeholder.jpg'}
+                    alt={game.titulo}
+                    onError={(e) => e.target.src = '/placeholder.jpg'}
+                  />
+                </Link>
+                <div className="status-badge" style={{ background: statusMap[game.status]?.color }}>
+                  {statusMap[game.status]?.emoji} {statusMap[game.status]?.label}
+                </div>
+              </div>
+              <div className="card-content">
+                <h3 title={game.titulo}>{game.titulo}</h3>
+                <p className="game-platform">{game.plataforma}</p>
+                <div className="rating-selector">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <span
+                      key={star}
+                      className={`star ${star <= (game.valoracion || 0) ? 'active' : ''}`}
+                      onClick={() => handleRatingChange(game.id, star)}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <select
+                  value={game.status}
+                  onChange={(e) => handleStatusChange(game.id, e.target.value)}
+                  className="status-select"
+                >
+                  {Object.entries(statusMap).map(([key, val]) => (
+                    <option key={key} value={key}>{val.emoji} {val.label}</option>
+                  ))}
+                </select>
+                <button
+                  className="delete-btn"
+                  onClick={() => confirmDelete(game.id)}
+                  disabled={deletingId === game.id}
+                >
+                  {deletingId === game.id ? 'Eliminando...' : 'Eliminar'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

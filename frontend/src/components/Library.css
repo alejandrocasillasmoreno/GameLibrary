@@ -1,211 +1,234 @@
-.library-container {
-  padding: 30px 20px;
+/* MyLibrary.css - Versión mejorada con tarjetas atractivas */
+
+.library {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
   min-height: 100vh;
-  color: #fff;
+  color: #f0f0f0;
 }
 
-.library-title {
+/* Accesibilidad mejorada */
+.library * {
+  outline: none;
+}
+
+.library *:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+.library h2:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.game-title {
+  color: #ffffff;
+}
+
+.game-meta {
+  color: #cccccc;
+}
+
+.game-genre {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.game-card:hover {
+  border-color: rgba(102, 126, 234, 0.6);
+}
+
+.btn-primary:focus,
+.btn-secondary:focus,
+.btn-remove:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Mejor contraste en hover */
+.btn-primary:hover {
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-remove:hover {
+  box-shadow: 0 8px 20px rgba(231, 76, 60, 0.6);
+}
+
+.library h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
   text-align: center;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #333;
-  font-size: 2.2rem;
-  font-weight: 700;
-  background: linear-gradient(45deg, #e94560, #f39c12);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 700;
+}
+
+.error-message {
+  background-color: rgba(255, 68, 68, 0.2);
+  border-left: 4px solid #ff4444;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+  color: #ff8888;
 }
 
 .empty-library {
   text-align: center;
-  margin-top: 100px;
-  padding: 40px 20px;
-}
-
-.empty-library h2 {
-  font-size: 1.8rem;
-  margin-bottom: 15px;
-  color: #ccc;
+  padding: 4rem 2rem;
+  background: #1a1a24;
+  border-radius: 16px;
+  border: 1px dashed #444;
 }
 
 .empty-library p {
-  color: #bbb;
-  font-size: 1.1rem;
-  margin-bottom: 25px;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  color: #aaa;
 }
 
-.empty-library a {
+.library-btn {
   display: inline-block;
-  padding: 14px 30px;
-  background: linear-gradient(135deg, #646cff 0%, #533a99 100%);
+  padding: 0.8rem 2rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 50px;
   color: white;
-  border-radius: 8px;
+  font-weight: 600;
   text-decoration: none;
-  font-weight: 700;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(100, 108, 255, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.empty-library a:hover {
+.library-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(100, 108, 255, 0.5);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
 }
 
-/* Grid de juegos */
 .library-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
-  padding: 20px 0;
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
-.lib-game-card {
-  border: 1px solid #333;
-  border-radius: 12px;
+.library-card {
+  background: #1e1e2e;
+  border-radius: 16px;
   overflow: hidden;
-  backgroundColor: #2a2a3e;
-  position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
+  border: 1px solid #2a2a3a;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
-.lib-game-card:hover {
+.library-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 24px rgba(100, 108, 255, 0.2);
-  border-color: #646cff;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+  border-color: #667eea;
 }
 
-.lib-image-container {
-  height: 160px;
+.library-image-wrapper {
   position: relative;
+  width: 100%;
+  height: 180px;
   overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.lib-image-container img {
+.library-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s;
 }
 
-.lib-game-card:hover .lib-image-container img {
+.library-card:hover .library-image {
   transform: scale(1.05);
 }
 
-.rating-badge {
+.library-status-badge {
   position: absolute;
-  bottom: 10px;
+  top: 10px;
   right: 10px;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: 700;
-  color: #f1c40f;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.lib-info {
-  padding: 18px;
-  flex-grow: 1;
+.status-pending { background: #f39c12; color: #000; }
+.status-playing { background: #3498db; }
+.status-completed { background: #2ecc71; }
+.status-dropped { background: #e74c3c; }
+
+.library-info {
+  padding: 1.2rem;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-.lib-title {
-  margin: 0 0 8px 0;
-  font-size: 1.05rem;
-  font-weight: 700;
+.library-info h3 {
+  font-size: 1.1rem;
+  margin: 0 0 0.4rem 0;
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #fff;
 }
 
-.lib-platform {
-  color: #ccc;
+.library-platform {
+  color: #aaa;
   font-size: 0.85rem;
-  margin-bottom: 12px;
+  margin-bottom: 1rem;
 }
 
-.status-label {
-  font-size: 0.8rem;
-  color: #ccc;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-
-.status-select {
-  width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  background: #333;
+.library-remove-btn {
+  background: #e74c3c;
   color: white;
-  border: 1px solid #444;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.status-select:focus {
-  outline: none;
-  border-color: #646cff;
-  background: #3a3a4e;
-  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
-}
-
-.status-select option {
-  background: #2a2a3e;
-  color: white;
-}
-
-.delete-btn {
-  width: 100%;
-  padding: 10px;
-  background: transparent;
-  border: 1px solid #e74c3c;
-  color: #e74c3c;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
+  transition: background 0.2s, transform 0.2s;
   margin-top: auto;
 }
 
-.delete-btn:hover {
-  background: rgba(231, 76, 60, 0.1);
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+.library-remove-btn:hover {
+  background: #c0392b;
+  transform: scale(1.02);
 }
 
-.delete-btn:active {
-  transform: scale(0.98);
+.library-loading {
+  text-align: center;
+  padding: 4rem;
+  font-size: 1.2rem;
+  color: #aaa;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
+  .library {
+    padding: 1rem;
+  }
+  .library h2 {
+    font-size: 2rem;
+  }
   .library-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-  }
-
-  .lib-image-container {
-    height: 140px;
-  }
-
-  .lib-info {
-    padding: 14px;
+    grid-template-columns: 1fr;
   }
 }

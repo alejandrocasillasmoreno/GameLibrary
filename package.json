@@ -9,7 +9,17 @@
     "dev-backend": "cd backend && npm run dev",
     "dev-frontend": "cd frontend && npm run dev"
   },
-  "keywords": ["games", "library", "collection"],
+  "keywords": [
+    "games",
+    "library",
+    "collection"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "react-chartjs-2": "^5.3.1",
+    "react-hot-toast": "^2.6.0",
+    "react-router-dom": "^7.13.0"
+  }
 }
