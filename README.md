@@ -959,7 +959,10 @@ Consultar sección **Troubleshooting Académico** en este README
 - **Código:** 9/10
 - **Documentación:** 10/10
 - **Total Estimado:** 9.75/10 (Excelente)
-
+  
+### Usuario de prueba
+Usuario: Prueba@gmail.com
+Contraseña: 123
 ---
 
 **¡Disfruta organizando tu biblioteca de juegos y demostrando tus conocimientos de desarrollo web full-stack!** 🎮🚀📚
